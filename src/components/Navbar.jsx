@@ -33,7 +33,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
       boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)'
     }}>
       
-      {/* 1. BRAND LOGO & OS BADGE - CENTERED & CLEAN */}
+      {/* 1. OFFICIAL GOLDEN HOUSE NEST EMBLEM BRAND LOGO */}
       <div 
         onClick={() => setActiveTab('Overview')}
         style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
@@ -43,17 +43,17 @@ export default function Navbar({ activeTab, setActiveTab }) {
           height: '38px',
           borderRadius: '10px',
           overflow: 'hidden',
-          background: '#ffffff',
-          border: '1px solid #cbd5e1',
+          background: '#fefce8',
+          border: '1px solid #fef08a',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(37, 99, 235, 0.12)'
+          boxShadow: '0 2px 10px rgba(217, 119, 6, 0.2)'
         }}>
           <img 
-            src="/nestpro-logo.jpg" 
-            alt="NestPro Logo" 
-            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', transform: 'scale(1.2)' }} 
+            src="/nestpro-icon.jpg" 
+            alt="NestPro Golden House Emblem" 
+            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }} 
           />
         </div>
 
@@ -76,7 +76,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
         </div>
       </div>
 
-      {/* 2. CENTER NAVIGATION TABS - SINGLE-LINE PERFECT FLEX ALIGNMENT */}
+      {/* 2. CENTER NAVIGATION TABS */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', padding: '0 12px' }}>
         {tabs.map(tab => {
           const isActive = activeTab === tab.id;
@@ -109,7 +109,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
         })}
       </nav>
 
-      {/* 3. RIGHT DESKTOP ACTIONS - COMPACT & CLEAN */}
+      {/* 3. RIGHT DESKTOP ACTIONS */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <button
           onClick={() => setActiveTab('Instant Scan Complaint')}

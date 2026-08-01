@@ -60,7 +60,7 @@ Would you like to assign a guest to one of these rooms or generate a QR check-in
   return (
     <div style={{ background: '#f8fafc', color: '#0f172a', minHeight: '100vh', fontFamily: 'var(--font-sans)', display: 'flex' }}>
       
-      {/* 1. EXACT FIGMA LEFT SIDEBAR */}
+      {/* 1. EXACT FIGMA LEFT SIDEBAR WITH OFFICIAL GOLDEN HOUSE EMBLEM */}
       <aside style={{
         width: '240px',
         background: '#ffffff',
@@ -75,14 +75,18 @@ Would you like to assign a guest to one of these rooms or generate a QR check-in
           {/* Logo Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', paddingLeft: '4px' }}>
             <div style={{
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               borderRadius: '10px',
               overflow: 'hidden',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)'
+              background: '#fefce8',
+              border: '1px solid #fef08a',
+              boxShadow: '0 2px 10px rgba(217, 119, 6, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              <img src="/nestpro-logo.jpg" alt="NestPro Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src="/nestpro-icon.jpg" alt="NestPro Golden House Emblem" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em' }}>
