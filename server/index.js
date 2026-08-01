@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { db, checkinTokens, rooms, kycRecords, complaints, houseRules, accessLogs, seedDatabase } from './db.js';
+import { db, checkinTokens, rooms, kycRecords, complaints, houseRules, accessLogs, guestRegistrations, seedDatabase } from './db.js';
 import { eq, and, sql, like } from 'drizzle-orm';
 
 dotenv.config();
@@ -409,6 +409,170 @@ app.get('/api/checkin/:token', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to verify check-in token.' });
+  }
+});
+
+// ----------------------------------------------------
+// GUEST CHECK-IN SUBMISSION — FULL REGISTRATION (/api/checkin/:token/submit)
+// ----------------------------------------------------
+
+app.post('/api/checkin/:token/submit', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // 1. Validate token exists
+    const records = await db.select().from(checkinTokens).where(eq(checkinTokens.token, token));
+    if (records.length === 0) {
+      return res.status(404).json({ error: 'Invalid check-in token. Please contact the property manager.' });
+    }
+
+    const tokenData = records[0];
+
+    // 2. Validate token not expired
+    if (new Date(tokenData.expiresAt) < new Date()) {
+      await db.update(checkinTokens).set({ status: 'EXPIRED' }).where(eq(checkinTokens.id, tokenData.id));
+      return res.status(410).json({ error: 'This check-in link has expired. Please request a new link from the property manager.' });
+    }
+
+    // 3. Validate token not already used
+    if (tokenData.status === 'CHECKED_IN') {
+      return res.status(409).json({ error: 'This check-in has already been completed. You cannot reuse a token.' });
+    }
+
+    // 4. Extract and validate required fields
+    const {
+      fullName, mobile, email, dateOfBirth, gender, nationality, occupation,
+      idType, idNumber, idDocumentB64,
+      permanentAddress, city, state, pinCode, country, addressProofB64,
+      passportPhotosB64,
+      companyOrCollege, employeeStudentIdB64,
+      emergencyName, emergencyRelationship, emergencyPhone,
+      agreementAccepted, digitalSignatureB64,
+      paymentScreenshotB64
+    } = req.body;
+
+    // Required field validation
+    const requiredFields = { fullName, mobile, email, dateOfBirth, gender, nationality, occupation, idType, idNumber, permanentAddress, city, state, pinCode, emergencyName, emergencyRelationship, emergencyPhone };
+    const missing = Object.entries(requiredFields).filter(([, v]) => !v || !String(v).trim()).map(([k]) => k);
+    if (missing.length > 0) {
+      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+    }
+
+    if (!agreementAccepted) {
+      return res.status(400).json({ error: 'You must accept the rental agreement before completing check-in.' });
+    }
+
+    if (!digitalSignatureB64) {
+      return res.status(400).json({ error: 'Digital signature is required.' });
+    }
+
+    if (!paymentScreenshotB64) {
+      return res.status(400).json({ error: 'Payment proof screenshot is required.' });
+    }
+
+    if (!idDocumentB64) {
+      return res.status(400).json({ error: 'Identity document upload is required.' });
+    }
+
+    const photos = Array.isArray(passportPhotosB64) ? passportPhotosB64 : [];
+    if (photos.length < 1) {
+      return res.status(400).json({ error: 'At least 1 passport-size photograph is required.' });
+    }
+
+    // 5. Generate smart lock access code
+    const accessPin = String(Math.floor(100000 + Math.random() * 900000));
+    const registrationId = `reg-${uuidv4().slice(0, 10)}`;
+    const now = new Date().toISOString();
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+
+    // 6. Store full guest registration
+    await db.insert(guestRegistrations).values({
+      id: registrationId,
+      token,
+      fullName: String(fullName).trim(),
+      mobile: String(mobile).trim(),
+      email: String(email).trim(),
+      dateOfBirth: String(dateOfBirth).trim(),
+      gender: String(gender).trim(),
+      nationality: String(nationality).trim(),
+      occupation: String(occupation).trim(),
+      idType: String(idType).trim(),
+      idNumber: String(idNumber).trim(),
+      idDocumentB64: idDocumentB64 || null,
+      permanentAddress: String(permanentAddress).trim(),
+      city: String(city).trim(),
+      state: String(state).trim(),
+      pinCode: String(pinCode).trim(),
+      country: String(country || 'India').trim(),
+      addressProofB64: addressProofB64 || null,
+      passportPhotosB64: JSON.stringify(photos),
+      companyOrCollege: companyOrCollege ? String(companyOrCollege).trim() : null,
+      employeeStudentIdB64: employeeStudentIdB64 || null,
+      emergencyName: String(emergencyName).trim(),
+      emergencyRelationship: String(emergencyRelationship).trim(),
+      emergencyPhone: String(emergencyPhone).trim(),
+      agreementAccepted: true,
+      agreementSignedAt: now,
+      digitalSignatureB64: digitalSignatureB64,
+      paymentScreenshotB64: paymentScreenshotB64,
+      assignedRoom: tokenData.assignedRoomNumber,
+      submittedAt: now,
+      ipAddress
+    });
+
+    // 7. Mark token as CHECKED_IN and set accessCode + timestamp (atomic)
+    await db.update(checkinTokens)
+      .set({
+        status: 'CHECKED_IN',
+        accessCode: accessPin,
+        kycVerified: true,
+        checkedInAt: now
+      })
+      .where(eq(checkinTokens.id, tokenData.id));
+
+    // 8. Mark room as OCCUPIED
+    await db.update(rooms)
+      .set({ status: 'OCCUPIED', currentTenant: String(fullName).trim() })
+      .where(eq(rooms.roomNumber, tokenData.assignedRoomNumber));
+
+    // 9. Respond with success
+    return res.json({
+      success: true,
+      message: 'Check-in completed successfully! Your registration has been saved.',
+      data: {
+        registrationId,
+        guestName: String(fullName).trim(),
+        assignedRoom: tokenData.assignedRoomNumber,
+        smartLockPin: accessPin,
+        checkedInAt: now
+      }
+    });
+
+  } catch (err) {
+    console.error('Check-in submission error:', err);
+    return res.status(500).json({ error: 'Failed to process check-in. Please try again or contact the front desk.' });
+  }
+});
+
+// Get single guest registration record (admin only - for dashboard)
+app.get('/api/admin/registrations', async (req, res) => {
+  try {
+    const all = await db.select({
+      id: guestRegistrations.id,
+      token: guestRegistrations.token,
+      fullName: guestRegistrations.fullName,
+      mobile: guestRegistrations.mobile,
+      email: guestRegistrations.email,
+      gender: guestRegistrations.gender,
+      idType: guestRegistrations.idType,
+      assignedRoom: guestRegistrations.assignedRoom,
+      submittedAt: guestRegistrations.submittedAt,
+      emergencyName: guestRegistrations.emergencyName,
+      emergencyPhone: guestRegistrations.emergencyPhone,
+    }).from(guestRegistrations);
+    res.json({ success: true, count: all.length, registrations: all });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch registrations.' });
   }
 });
 

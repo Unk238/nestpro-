@@ -21,7 +21,10 @@ const dbPath = path.join(dataDir, 'nestpro.db');
 const sqlite = new Database(dbPath);
 export const db = drizzle(sqlite);
 
-// Database Schemas
+// ============================================================
+// SCHEMA DEFINITIONS
+// ============================================================
+
 export const rooms = sqliteTable('rooms', {
   id: text('id').primaryKey(),
   roomNumber: text('room_number').notNull().unique(),
@@ -47,6 +50,7 @@ export const checkinTokens = sqliteTable('checkin_tokens', {
   paymentId: text('payment_id'),
   kycVerified: integer('kyc_verified', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  checkedInAt: text('checked_in_at'),
 });
 
 export const kycRecords = sqliteTable('kyc_records', {
@@ -88,7 +92,62 @@ export const accessLogs = sqliteTable('access_logs', {
   entryPoint: text('entry_point').default('Main Smart Gate'),
 });
 
-// Create tables if not exist
+// ── NEW: Full Guest Registration Record ────────────────────────────────────────
+export const guestRegistrations = sqliteTable('guest_registrations', {
+  id: text('id').primaryKey(),
+  token: text('token').notNull().unique(),
+
+  // Personal Details
+  fullName: text('full_name').notNull(),
+  mobile: text('mobile').notNull(),
+  email: text('email').notNull(),
+  dateOfBirth: text('date_of_birth').notNull(),
+  gender: text('gender').notNull(),
+  nationality: text('nationality').notNull(),
+  occupation: text('occupation').notNull(),
+
+  // Identity Verification
+  idType: text('id_type').notNull(),
+  idNumber: text('id_number').notNull(),
+  idDocumentB64: text('id_document_b64'),
+
+  // Address Details
+  permanentAddress: text('permanent_address').notNull(),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  pinCode: text('pin_code').notNull(),
+  country: text('country').notNull().default('India'),
+  addressProofB64: text('address_proof_b64'),
+
+  // Photographs
+  passportPhotosB64: text('passport_photos_b64'), // JSON array of base64 strings
+
+  // Professional/Student Details
+  companyOrCollege: text('company_or_college'),
+  employeeStudentIdB64: text('employee_student_id_b64'),
+
+  // Emergency Contact
+  emergencyName: text('emergency_name').notNull(),
+  emergencyRelationship: text('emergency_relationship').notNull(),
+  emergencyPhone: text('emergency_phone').notNull(),
+
+  // Rental Agreement
+  agreementAccepted: integer('agreement_accepted', { mode: 'boolean' }).default(false),
+  agreementSignedAt: text('agreement_signed_at'),
+  digitalSignatureB64: text('digital_signature_b64'),
+
+  // Payment Verification
+  paymentScreenshotB64: text('payment_screenshot_b64'),
+
+  // Meta
+  assignedRoom: text('assigned_room').notNull(),
+  submittedAt: text('submitted_at').default(sql`CURRENT_TIMESTAMP`),
+  ipAddress: text('ip_address'),
+});
+
+// ============================================================
+// CREATE TABLES
+// ============================================================
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS rooms (
     id TEXT PRIMARY KEY,
@@ -114,7 +173,8 @@ sqlite.exec(`
     access_code TEXT,
     payment_id TEXT,
     kyc_verified INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    checked_in_at TEXT
   );
 
   CREATE TABLE IF NOT EXISTS kyc_records (
@@ -155,9 +215,52 @@ sqlite.exec(`
     unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
     entry_point TEXT DEFAULT 'Main Smart Gate'
   );
+
+  CREATE TABLE IF NOT EXISTS guest_registrations (
+    id TEXT PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    mobile TEXT NOT NULL,
+    email TEXT NOT NULL,
+    date_of_birth TEXT NOT NULL,
+    gender TEXT NOT NULL,
+    nationality TEXT NOT NULL,
+    occupation TEXT NOT NULL,
+    id_type TEXT NOT NULL,
+    id_number TEXT NOT NULL,
+    id_document_b64 TEXT,
+    permanent_address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    pin_code TEXT NOT NULL,
+    country TEXT NOT NULL DEFAULT 'India',
+    address_proof_b64 TEXT,
+    passport_photos_b64 TEXT,
+    company_or_college TEXT,
+    employee_student_id_b64 TEXT,
+    emergency_name TEXT NOT NULL,
+    emergency_relationship TEXT NOT NULL,
+    emergency_phone TEXT NOT NULL,
+    agreement_accepted INTEGER DEFAULT 0,
+    agreement_signed_at TEXT,
+    digital_signature_b64 TEXT,
+    payment_screenshot_b64 TEXT,
+    assigned_room TEXT NOT NULL,
+    submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT
+  );
 `);
 
-// Initial Data Seeding
+// ============================================================
+// ALTER TABLE: add checked_in_at column if missing (migration-safe)
+// ============================================================
+try {
+  sqlite.exec(`ALTER TABLE checkin_tokens ADD COLUMN checked_in_at TEXT;`);
+} catch (_) { /* column already exists */ }
+
+// ============================================================
+// SEED DATABASE
+// ============================================================
 export function seedDatabase() {
   const roomCount = sqlite.prepare('SELECT count(*) as count FROM rooms').get();
   if (roomCount.count < 8) {
@@ -166,14 +269,14 @@ export function seedDatabase() {
     sqlite.exec(`DELETE FROM rooms; DELETE FROM checkin_tokens; DELETE FROM complaints;`);
 
     const initialRooms = [
-      { id: 'rm-101', roomNumber: '101', type: 'Single Luxury', floor: 1, priceMonthly: 14500, depositAmount: 14500, status: 'OCCUPIED', currentTenant: 'Aarav Patel', amenities: JSON.stringify(['Balcony', 'AC', 'Private Washroom', 'WiFi']) },
-      { id: 'rm-102', roomNumber: '102', type: 'Double Sharing', floor: 1, priceMonthly: 9500, depositAmount: 9500, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['AC', 'Shared Washroom', 'WiFi']) },
-      { id: 'rm-201', roomNumber: '201', type: 'Deluxe Suite', floor: 2, priceMonthly: 25000, depositAmount: 25000, status: 'OCCUPIED', currentTenant: 'Priya Sundaram', amenities: JSON.stringify(['Skyline View', 'AC', 'Smart TV', 'Private Washroom']) },
-      { id: 'rm-202', roomNumber: '202', type: 'Double Sharing', floor: 2, priceMonthly: 9500, depositAmount: 9500, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['AC', 'Balcony', 'WiFi']) },
-      { id: 'rm-301', roomNumber: '301', type: 'Double Sharing', floor: 3, priceMonthly: 9800, depositAmount: 9800, status: 'OCCUPIED', currentTenant: 'Rohan Sharma', amenities: JSON.stringify(['AC', 'Attached Washroom']) },
-      { id: 'rm-302', roomNumber: '302', type: 'Deluxe Suite', floor: 3, priceMonthly: 22000, depositAmount: 22000, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['City View', 'AC', 'Private Kitchenette']) },
-      { id: 'rm-401', roomNumber: '401', type: 'Triple Sharing', floor: 4, priceMonthly: 8000, depositAmount: 8000, status: 'MAINTENANCE', currentTenant: null, amenities: JSON.stringify(['Shared Washroom', 'WiFi']) },
-      { id: 'rm-402', roomNumber: '402', type: 'Single Luxury', floor: 4, priceMonthly: 15000, depositAmount: 15000, status: 'OCCUPIED', currentTenant: 'Vikramaditya Sen', amenities: JSON.stringify(['Top Floor View', 'AC', 'Private Desk']) }
+      { id: 'rm-101', roomNumber: '101', type: 'Single Luxury',   floor: 1, priceMonthly: 14500, depositAmount: 14500, status: 'OCCUPIED',     currentTenant: 'Aarav Patel',        amenities: JSON.stringify(['Balcony', 'AC', 'Private Washroom', 'WiFi']) },
+      { id: 'rm-102', roomNumber: '102', type: 'Double Sharing',   floor: 1, priceMonthly:  9500, depositAmount:  9500, status: 'AVAILABLE',    currentTenant: null,                  amenities: JSON.stringify(['AC', 'Shared Washroom', 'WiFi']) },
+      { id: 'rm-201', roomNumber: '201', type: 'Deluxe Suite',     floor: 2, priceMonthly: 25000, depositAmount: 25000, status: 'OCCUPIED',     currentTenant: 'Priya Sundaram',      amenities: JSON.stringify(['Skyline View', 'AC', 'Smart TV', 'Private Washroom']) },
+      { id: 'rm-202', roomNumber: '202', type: 'Double Sharing',   floor: 2, priceMonthly:  9500, depositAmount:  9500, status: 'AVAILABLE',    currentTenant: null,                  amenities: JSON.stringify(['AC', 'Balcony', 'WiFi']) },
+      { id: 'rm-301', roomNumber: '301', type: 'Double Sharing',   floor: 3, priceMonthly:  9800, depositAmount:  9800, status: 'OCCUPIED',     currentTenant: 'Rohan Sharma',        amenities: JSON.stringify(['AC', 'Attached Washroom']) },
+      { id: 'rm-302', roomNumber: '302', type: 'Deluxe Suite',     floor: 3, priceMonthly: 22000, depositAmount: 22000, status: 'AVAILABLE',    currentTenant: null,                  amenities: JSON.stringify(['City View', 'AC', 'Private Kitchenette']) },
+      { id: 'rm-401', roomNumber: '401', type: 'Triple Sharing',   floor: 4, priceMonthly:  8000, depositAmount:  8000, status: 'MAINTENANCE',  currentTenant: null,                  amenities: JSON.stringify(['Shared Washroom', 'WiFi']) },
+      { id: 'rm-402', roomNumber: '402', type: 'Single Luxury',   floor: 4, priceMonthly: 15000, depositAmount: 15000, status: 'OCCUPIED',     currentTenant: 'Vikramaditya Sen',    amenities: JSON.stringify(['Top Floor View', 'AC', 'Private Desk']) }
     ];
 
     const insertRoom = sqlite.prepare(`
@@ -218,9 +321,9 @@ export function seedDatabase() {
 
     // Seed Kanban Complaints
     const demoComplaints = [
-      { id: 'c-101', ticketId: 'TKT-101', residentName: 'Rohan Sharma', roomNumber: '301', category: 'Plumbing', description: 'AC Water Leakage in washroom', priority: 'CRITICAL', status: 'IN_PROGRESS' },
-      { id: 'c-102', ticketId: 'TKT-102', residentName: 'Aarav Patel', roomNumber: '101', category: 'Internet', description: 'Floor 2 Wi-Fi Router Reset', priority: 'HIGH', status: 'OPEN' },
-      { id: 'c-103', ticketId: 'TKT-103', residentName: 'Priya Sundaram', roomNumber: '201', category: 'Electrical', description: 'Hot Water Geyser Tripping', priority: 'MEDIUM', status: 'RESOLVED' }
+      { id: 'c-101', ticketId: 'TKT-101', residentName: 'Rohan Sharma',   roomNumber: '301', category: 'Plumbing',   description: 'AC Water Leakage in washroom',   priority: 'CRITICAL', status: 'IN_PROGRESS' },
+      { id: 'c-102', ticketId: 'TKT-102', residentName: 'Aarav Patel',    roomNumber: '101', category: 'Internet',   description: 'Floor 2 Wi-Fi Router Reset',      priority: 'HIGH',     status: 'OPEN' },
+      { id: 'c-103', ticketId: 'TKT-103', residentName: 'Priya Sundaram', roomNumber: '201', category: 'Electrical', description: 'Hot Water Geyser Tripping',       priority: 'MEDIUM',   status: 'RESOLVED' }
     ];
 
     const insertComplaint = sqlite.prepare(`
