@@ -3,6 +3,7 @@ import {
   Building2, ShieldCheck, MessageSquare, DollarSign, FileText, Home, 
   UserCheck, Phone, CheckCircle2, Upload, Send, ArrowRight, Clock, AlertCircle, Camera 
 } from 'lucide-react';
+import PublicGuestLayout from './PublicGuestLayout';
 
 export default function ResidentPortal({ token, tokenData, onSubmitComplaint, onPayRent }) {
   const [activeTab, setActiveTab] = useState(tokenData?.type || 'complaint');
@@ -60,17 +61,30 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
   };
 
   return (
-    <div style={{ background: '#f8fafc', color: '#0f172a', minHeight: '100vh', fontFamily: 'var(--font-sans)', padding: '24px 16px' }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+    <PublicGuestLayout>
+      <div style={{ width: '100%' }}>
         
-        {/* LIGHTWEIGHT RESIDENT PORTAL HEADER (NO OWNER DASHBOARD ACCESS) */}
-        <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', marginBottom: '20px' }}>
-          <img src="/nestpro-logo.jpg" alt="NestPro Logo" style={{ width: '44px', height: '44px', borderRadius: '12px', objectFit: 'cover', margin: '0 auto 8px auto' }} />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{resident.property}</h2>
-          <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 800, marginTop: '2px' }}>
+        {/* LIGHTWEIGHT RESIDENT PORTAL HEADER */}
+        <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '20px', textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            background: '#fefce8',
+            border: '1px solid #fef08a',
+            margin: '0 auto 8px auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <img src="/nestpro-icon.jpg" alt="NestPro Golden House Emblem" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff' }}>{resident.property}</h2>
+          <div style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: 800, marginTop: '2px' }}>
             Welcome, {resident.name} (Room {resident.room.split(' ')[0]})
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>
             🔒 Token-Protected Resident Access Portal (`/access/${token || '3JHF82LK'}`)
           </div>
         </div>
@@ -87,15 +101,17 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               style={{
-                padding: '10px 14px',
+                flex: 1,
+                padding: '10px 8px',
                 borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                background: activeTab === t.id ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#ffffff',
-                color: activeTab === t.id ? '#ffffff' : '#334155',
+                border: '1px solid #334155',
+                background: activeTab === t.id ? '#2563eb' : '#1e293b',
+                color: activeTab === t.id ? '#ffffff' : '#94a3b8',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.775rem',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                textAlign: 'center'
               }}
             >
               {t.label}
@@ -105,17 +121,17 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
 
         {/* SERVICE 1: RAISE COMPLAINT PORTAL */}
         {activeTab === 'complaint' && (
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>Raise Maintenance Issue</h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '20px' }}>
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '24px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', marginBottom: '6px' }}>Raise Maintenance Issue</h3>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>
               Submitting alerts the Owner Dashboard & maintenance team immediately.
             </p>
 
             {complaintSubmitted ? (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '14px', textAlign: 'center' }}>
-                <CheckCircle2 size={40} color="#16a34a" style={{ margin: '0 auto 8px auto' }} />
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#16a34a' }}>Complaint Logged!</h4>
-                <p style={{ fontSize: '0.8rem', color: '#475569', marginTop: '4px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '20px', borderRadius: '14px', textAlign: 'center' }}>
+                <CheckCircle2 size={40} color="#34d399" style={{ margin: '0 auto 8px auto' }} />
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#34d399' }}>Complaint Logged!</h4>
+                <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
                   Owner Dashboard notified. Ticket is open on maintenance Kanban.
                 </p>
                 <button className="btn-secondary" onClick={() => setComplaintSubmitted(false)} style={{ marginTop: '14px', fontSize: '0.8rem' }}>
@@ -125,11 +141,11 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
             ) : (
               <form onSubmit={handleComplaintSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Category</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Category</label>
                   <select
                     value={complaintCategory}
                     onChange={(e) => setComplaintCategory(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontWeight: 600 }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#ffffff', outline: 'none', fontWeight: 600 }}
                   >
                     <option value="Plumbing">Plumbing (Water Leak / Tap)</option>
                     <option value="Electrical">Electrical (Geyser / AC / Power)</option>
@@ -140,23 +156,23 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Description of Issue</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Description of Issue</label>
                   <textarea
                     rows="4"
                     placeholder="Describe the issue in detail..."
                     value={complaintDesc}
                     onChange={(e) => setComplaintDesc(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#ffffff', outline: 'none', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Priority</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>Priority</label>
                   <select
                     value={complaintPriority}
                     onChange={(e) => setComplaintPriority(e.target.value)}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontWeight: 600 }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#ffffff', outline: 'none', fontWeight: 600 }}
                   >
                     <option value="CRITICAL">CRITICAL (Emergency / Leak)</option>
                     <option value="HIGH">HIGH (Urgent)</option>
@@ -167,10 +183,10 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
                 {/* Photo Upload Simulator */}
                 <div
                   onClick={() => setComplaintPhotoUploaded(true)}
-                  style={{ border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '10px', textAlign: 'center', background: '#f8fafc', cursor: 'pointer' }}
+                  style={{ border: '2px dashed #334155', padding: '16px', borderRadius: '10px', textAlign: 'center', background: '#1e293b', cursor: 'pointer' }}
                 >
-                  <Camera size={24} color="#2563eb" style={{ margin: '0 auto 4px auto' }} />
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}>
+                  <Camera size={24} color="#60a5fa" style={{ margin: '0 auto 4px auto' }} />
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff' }}>
                     {complaintPhotoUploaded ? '✓ Issue Photo Uploaded' : 'Attach Photo of Issue (Optional)'}
                   </div>
                 </div>
@@ -185,29 +201,29 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
 
         {/* SERVICE 2: PAY RENT PORTAL */}
         {activeTab === 'payment' && (
-          <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>Monthly Rent Payment</h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '20px' }}>
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', marginBottom: '6px' }}>Monthly Rent Payment</h3>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>
               Pay via UPI / Netbanking to update Owner Payment Ledger instantly.
             </p>
 
             {paymentCompleted ? (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '14px' }}>
-                <CheckCircle2 size={40} color="#16a34a" style={{ margin: '0 auto 8px auto' }} />
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#16a34a' }}>Payment Successful!</h4>
-                <p style={{ fontSize: '0.8rem', color: '#475569', marginTop: '4px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '20px', borderRadius: '14px' }}>
+                <CheckCircle2 size={40} color="#34d399" style={{ margin: '0 auto 8px auto' }} />
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#34d399' }}>Payment Successful!</h4>
+                <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px' }}>
                   ₹{resident.rentDue.toLocaleString()} received via UPI. Digital receipt downloaded.
                 </p>
               </div>
             ) : (
               <div>
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '14px', marginBottom: '20px' }}>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>RENT BALANCE DUE:</div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#2563eb' }}>₹{resident.rentDue.toLocaleString()}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px' }}>Room {resident.room}</div>
+                <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '20px', borderRadius: '14px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>RENT BALANCE DUE:</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#60a5fa' }}>₹{resident.rentDue.toLocaleString()}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: '4px' }}>Room {resident.room}</div>
                 </div>
 
-                <button className="btn-primary" onClick={handlePaymentSubmit} style={{ width: '100%', justifyContent: 'center', padding: '14px', background: '#16a34a' }}>
+                <button className="btn-primary" onClick={handlePaymentSubmit} style={{ width: '100%', justifyContent: 'center', padding: '14px', background: '#10b981' }}>
                   <DollarSign size={18} /> Pay ₹{resident.rentDue.toLocaleString()} via UPI
                 </button>
               </div>
@@ -217,23 +233,23 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
 
         {/* SERVICE 3: ROOM & SMART LOCK PIN */}
         {activeTab === 'room' && (
-          <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>Room & Smart Key Access</h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '20px' }}>Your assigned room details & electronic door lock passcode.</p>
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', marginBottom: '6px' }}>Room & Smart Key Access</h3>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>Your assigned room details & electronic door lock passcode.</p>
 
-            <div style={{ background: '#f8fafc', border: '2px solid #2563eb', padding: '20px', borderRadius: '16px' }}>
-              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>SMART DOOR LOCK PIN:</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#2563eb', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>{resident.lockPin}</div>
-              <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: '6px', fontWeight: 700 }}>✓ Key Active for Room {resident.room.split(' ')[0]}</div>
+            <div style={{ background: '#1e293b', border: '2px solid #2563eb', padding: '20px', borderRadius: '16px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>SMART DOOR LOCK PIN:</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#60a5fa', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>{resident.lockPin}</div>
+              <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '6px', fontWeight: 700 }}>✓ Key Active for Room {resident.room.split(' ')[0]}</div>
             </div>
           </div>
         )}
 
         {/* SERVICE 4: VISITOR PASS */}
         {activeTab === 'visitor' && (
-          <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>Visitor Gate Pass</h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '20px' }}>Generate 1-day visitor pass for main gate entrance.</p>
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', marginBottom: '6px' }}>Visitor Gate Pass</h3>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px' }}>Generate 1-day visitor pass for main gate entrance.</p>
 
             <button className="btn-primary" onClick={() => alert('Issued Visitor Pass #VIS-402 for Main Gate.')} style={{ width: '100%', justifyContent: 'center' }}>
               Generate Gate Pass QR
@@ -242,6 +258,6 @@ export default function ResidentPortal({ token, tokenData, onSubmitComplaint, on
         )}
 
       </div>
-    </div>
+    </PublicGuestLayout>
   );
 }
