@@ -18,6 +18,16 @@ import PrintableQrPosters from './components/PrintableQrPosters';
 import FloatingDesktopToolbar from './components/FloatingDesktopToolbar';
 
 export default function App() {
+  // ── URL-based routing for guest check-in links ──────────────────────────────
+  // When a guest opens https://nestpro-os.vercel.app/checkin/TOKEN
+  // they must see ONLY the check-in form — no admin dashboard, no navbar
+  const urlPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const checkinMatch = urlPath.match(/^\/checkin\/(.+)$/);
+  if (checkinMatch) {
+    const guestToken = checkinMatch[1];
+    return <GuestSelfCheckInFlow token={guestToken} onCompleteCheckIn={() => {}} />;
+  }
+
   const [activeTab, setActiveTab] = useState('Overview');
   const [currentToken, setCurrentToken] = useState('demo-checkin-token-88');
   const [residentPortalTokenData, setResidentPortalTokenData] = useState({
