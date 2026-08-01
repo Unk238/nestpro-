@@ -59,12 +59,12 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sans)' }}>
       {/* Header Navbar */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: '80px' }}>
+      <main style={{ flex: 1, paddingBottom: activeTab === 'Overview' ? '0' : '80px' }}>
         {activeTab === 'Overview' && (
           <OverviewPage onNavigate={setActiveTab} />
         )}
@@ -135,18 +135,6 @@ export default function App() {
 
       {/* Floating Interactive Desktop Toolbar */}
       <FloatingDesktopToolbar onNavigate={setActiveTab} />
-
-      {/* Production Enterprise Footer */}
-      <footer style={{
-        borderTop: '1px solid #e2e8f0',
-        padding: '24px 20px',
-        textAlign: 'center',
-        fontSize: '0.85rem',
-        color: '#64748b',
-        background: '#ffffff'
-      }}>
-        NestPro — Zero-App QR Complaint Scanner & Owner-First Operating System
-      </footer>
     </div>
   );
 }
