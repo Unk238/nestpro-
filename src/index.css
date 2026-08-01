@@ -47,6 +47,7 @@ body {
     radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
     radial-gradient(circle at 90% 90%, rgba(2, 132, 199, 0.05) 0%, transparent 45%);
   background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom Scrollbar */
@@ -63,6 +64,19 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Flex Icon Baseline Alignment Helpers */
+.flex-align-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Crisp White & Blue Glassmorphic Panels */
@@ -125,6 +139,7 @@ body {
   gap: 8px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  line-height: 1;
 }
 .btn-primary:hover {
   transform: translateY(-2px);
@@ -144,6 +159,7 @@ body {
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
+  line-height: 1;
 }
 .btn-secondary:hover {
   background: #f8fafc;
@@ -162,6 +178,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .badge-emerald {
@@ -194,7 +211,15 @@ body {
   border: 1px solid #fecdd3;
 }
 
-/* Pulse animation */
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.2); }
@@ -207,6 +232,29 @@ body {
   background-color: #10b981;
   box-shadow: 0 0 10px #10b981;
   animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* Floating Desktop Toolbar for Interactive Controls */
+.floating-toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  animation: slide-up 0.3s ease;
+}
+
+@keyframes slide-up {
+  from { transform: translate(-50%, 100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }
 
 /* Trend Pill Indicators */

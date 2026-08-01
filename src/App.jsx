@@ -15,6 +15,7 @@ import WhatsAppAutomation from './components/WhatsAppAutomation';
 import ResidentPortal from './components/ResidentPortal';
 import InstantScanComplaintPage from './components/InstantScanComplaintPage';
 import PrintableQrPosters from './components/PrintableQrPosters';
+import FloatingDesktopToolbar from './components/FloatingDesktopToolbar';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Overview');
@@ -63,7 +64,7 @@ export default function App() {
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: '60px' }}>
+      <main style={{ flex: 1, paddingBottom: '80px' }}>
         {activeTab === 'Overview' && (
           <OverviewPage onNavigate={setActiveTab} />
         )}
@@ -131,6 +132,9 @@ export default function App() {
           <SettingsView />
         )}
       </main>
+
+      {/* Floating Interactive Desktop Toolbar */}
+      <FloatingDesktopToolbar onNavigate={setActiveTab} />
 
       {/* Production Enterprise Footer */}
       <footer style={{
