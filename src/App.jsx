@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import Navbar from './components/Navbar';
+import OverviewPage from './components/OverviewPage';
+import FigmaSaaSDashboard from './components/FigmaSaaSDashboard';
+import PropertyPortfolio from './components/PropertyPortfolio';
+import ResidentLedger from './components/ResidentLedger';
+import SelfCheckInManager from './components/SelfCheckInManager';
+import PaymentsLedger from './components/PaymentsLedger';
+import AiReceptionistSuite from './components/AiReceptionistSuite';
+import OwnerCommandCenterView from './components/OwnerCommandCenterView';
+import AnalyticsView from './components/AnalyticsView';
+import SettingsView from './components/SettingsView';
+import GuestSelfCheckInFlow from './components/GuestSelfCheckInFlow';
+import WhatsAppAutomation from './components/WhatsAppAutomation';
+import ResidentPortal from './components/ResidentPortal';
+import InstantScanComplaintPage from './components/InstantScanComplaintPage';
+import PrintableQrPosters from './components/PrintableQrPosters';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [currentToken, setCurrentToken] = useState('demo-checkin-token-88');
+  const [residentPortalTokenData, setResidentPortalTokenData] = useState({
+    token: '3JHF82LK',
+    type: 'complaint',
+    resident: {
+      name: 'Aarav Patel',
+      room: '101 (Single Luxury)',
+      property: 'Sunrise PG & Residency',
+      rentDue: 15000,
+      lockPin: '441392'
+    }
+  });
+
+  const handleLaunchResidentPortal = (tokenStr, data) => {
+    setCurrentToken(tokenStr);
+    setResidentPortalTokenData({
+      token: tokenStr,
+      type: data?.type || 'complaint',
+      resident: data?.resident || {
+        name: 'Aarav Patel',
+        room: '101 (Single Luxury)',
+        property: 'Sunrise PG & Residency',
+        rentDue: 15000,
+        lockPin: '441392'
+      }
+    });
+    setActiveTab('Resident Encrypted Portal');
+  };
+
+  const handleOpenCheckInToken = (tokenStr) => {
+    setCurrentToken(tokenStr);
+    setActiveTab('Self Check-In Portal');
+  };
+
+  const handleResidentSubmittedInstantComplaint = (ticket) => {
+    alert(`⚡ NEW COMPLAINT RECEIVED ON OWNER DASHBOARD!\n\nTicket #${ticket.id}\nRoom: ${ticket.room}\nIssue: ${ticket.title}\nStatus: OPEN on Kanban Board`);
+    setActiveTab('Dashboard');
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header Navbar */}
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Main Content Area */}
+      <main style={{ flex: 1, paddingBottom: '60px' }}>
+        {activeTab === 'Overview' && (
+          <OverviewPage onNavigate={setActiveTab} />
+        )}
+
+        {activeTab === 'Dashboard' && (
+          <FigmaSaaSDashboard onOpenCheckInToken={handleOpenCheckInToken} />
+        )}
+
+        {activeTab === 'Property Portfolio' && (
+          <PropertyPortfolio />
+        )}
+
+        {activeTab === 'Resident Ledger' && (
+          <ResidentLedger onLaunchResidentPortal={handleLaunchResidentPortal} />
+        )}
+
+        {activeTab === 'Print Room QR Posters' && (
+          <PrintableQrPosters onTestScanComplaint={() => setActiveTab('Instant Scan Complaint')} />
+        )}
+
+        {activeTab === 'Self Check-in' && (
+          <SelfCheckInManager onSelectToken={handleOpenCheckInToken} />
+        )}
+
+        {activeTab === 'Self Check-In Portal' && (
+          <GuestSelfCheckInFlow token={currentToken} onCompleteCheckIn={() => setActiveTab('Resident Ledger')} />
+        )}
+
+        {/* 1-CLICK INSTANT QR SCAN COMPLAINT PORTAL (ZERO APP / ZERO LOGIN) */}
+        {activeTab === 'Instant Scan Complaint' && (
+          <InstantScanComplaintPage onSubmitToOwner={handleResidentSubmittedInstantComplaint} />
+        )}
+
+        {/* LIGHTWEIGHT ENCRYPTED RESIDENT PORTAL (/access/3JHF82LK) */}
+        {activeTab === 'Resident Encrypted Portal' && (
+          <ResidentPortal
+            token={residentPortalTokenData.token}
+            tokenData={residentPortalTokenData}
+            onSubmitComplaint={handleResidentSubmittedInstantComplaint}
+            onPayRent={() => {}}
+          />
+        )}
+
+        {activeTab === 'Payments' && (
+          <PaymentsLedger />
+        )}
+
+        {activeTab === 'AI Voice Receptionist' && (
+          <AiReceptionistSuite onOpenCheckInToken={handleOpenCheckInToken} />
+        )}
+
+        {activeTab === 'Command Center' && (
+          <OwnerCommandCenterView onOpenCheckInToken={handleOpenCheckInToken} />
+        )}
+
+        {activeTab === 'WhatsApp Suite' && (
+          <WhatsAppAutomation onOpenCheckInToken={handleOpenCheckInToken} />
+        )}
+
+        {activeTab === 'Analytics' && (
+          <AnalyticsView />
+        )}
+
+        {activeTab === 'Settings' && (
+          <SettingsView />
+        )}
+      </main>
+
+      {/* Production Enterprise Footer */}
+      <footer style={{
+        borderTop: '1px solid #e2e8f0',
+        padding: '24px 20px',
+        textAlign: 'center',
+        fontSize: '0.85rem',
+        color: '#64748b',
+        background: '#ffffff'
+      }}>
+        NestPro — Zero-App QR Complaint Scanner & Owner-First Operating System
+      </footer>
+    </div>
+  );
+}
