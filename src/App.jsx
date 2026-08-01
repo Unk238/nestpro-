@@ -18,16 +18,6 @@ import PrintableQrPosters from './components/PrintableQrPosters';
 import FloatingDesktopToolbar from './components/FloatingDesktopToolbar';
 
 export default function App() {
-  // ── URL-based routing for guest check-in links ──────────────────────────────
-  // When a guest opens https://nestpro-os.vercel.app/checkin/TOKEN
-  // they must see ONLY the check-in form — no admin dashboard, no navbar
-  const urlPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-  const checkinMatch = urlPath.match(/^\/checkin\/(.+)$/);
-  if (checkinMatch) {
-    const guestToken = checkinMatch[1];
-    return <GuestSelfCheckInFlow token={guestToken} onCompleteCheckIn={() => {}} />;
-  }
-
   const [activeTab, setActiveTab] = useState('Overview');
   const [currentToken, setCurrentToken] = useState('demo-checkin-token-88');
   const [residentPortalTokenData, setResidentPortalTokenData] = useState({
@@ -41,6 +31,17 @@ export default function App() {
       lockPin: '441392'
     }
   });
+
+  // URL-based routing for guest check-in links.
+  // Guests should see only the check-in form, with no admin dashboard or navbar.
+  // When a guest opens https://nestpro-os.vercel.app/checkin/TOKEN
+  // they must see ONLY the check-in form — no admin dashboard, no navbar
+  const urlPath = typeof window !== 'undefined' ? (window.location.pathname + window.location.hash) : '/';
+  const checkinMatch = urlPath.match(/\/checkin\/([^\/\?#]+)/);
+  if (checkinMatch) {
+    const guestToken = checkinMatch[1];
+    return <GuestSelfCheckInFlow token={guestToken} onCompleteCheckIn={() => {}} />;
+  }
 
   const handleLaunchResidentPortal = (tokenStr, data) => {
     setCurrentToken(tokenStr);
@@ -64,16 +65,14 @@ export default function App() {
   };
 
   const handleResidentSubmittedInstantComplaint = (ticket) => {
-    alert(`⚡ NEW COMPLAINT RECEIVED ON OWNER DASHBOARD!\n\nTicket #${ticket.id}\nRoom: ${ticket.room}\nIssue: ${ticket.title}\nStatus: OPEN on Kanban Board`);
+    alert(`NEW COMPLAINT RECEIVED ON OWNER DASHBOARD!\n\nTicket #${ticket.id}\nRoom: ${ticket.room}\nIssue: ${ticket.title}\nStatus: OPEN on Kanban Board`);
     setActiveTab('Dashboard');
   };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sans)' }}>
-      {/* Header Navbar */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Content Area */}
       <main style={{ flex: 1, paddingBottom: activeTab === 'Overview' ? '0' : '80px' }}>
         {activeTab === 'Overview' && (
           <OverviewPage onNavigate={setActiveTab} />
@@ -103,12 +102,10 @@ export default function App() {
           <GuestSelfCheckInFlow token={currentToken} onCompleteCheckIn={() => setActiveTab('Resident Ledger')} />
         )}
 
-        {/* 1-CLICK INSTANT QR SCAN COMPLAINT PORTAL (ZERO APP / ZERO LOGIN) */}
         {activeTab === 'Instant Scan Complaint' && (
           <InstantScanComplaintPage onSubmitToOwner={handleResidentSubmittedInstantComplaint} />
         )}
 
-        {/* LIGHTWEIGHT ENCRYPTED RESIDENT PORTAL (/access/3JHF82LK) */}
         {activeTab === 'Resident Encrypted Portal' && (
           <ResidentPortal
             token={residentPortalTokenData.token}
@@ -143,7 +140,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Interactive Desktop Toolbar */}
       <FloatingDesktopToolbar onNavigate={setActiveTab} />
     </div>
   );

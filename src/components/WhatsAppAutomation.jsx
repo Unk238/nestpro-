@@ -55,15 +55,16 @@ export default function WhatsAppAutomation({ onOpenCheckInToken }) {
       });
       const data = await res.json();
 
-      if (data.success) {
-        setDeliveryStatus('DELIVERED');
-        setLastCheckInUrl(data.checkInUrl);
-        setLastToken(data.token);
-        fetchLogs();
-      } else {
-        setDeliveryStatus('FAILED');
+      if (!res.ok || !data?.success || !data.checkInUrl || !data.token) {
+        throw new Error(data?.error || 'Unable to generate a valid check-in link.');
       }
+
+      setDeliveryStatus('DELIVERED');
+      setLastCheckInUrl(data.checkInUrl);
+      setLastToken(data.token);
+      fetchLogs();
     } catch (err) {
+      console.error('Failed to generate WhatsApp check-in link:', err);
       setDeliveryStatus('FAILED');
     } finally {
       setLoading(false);
@@ -99,13 +100,14 @@ export default function WhatsAppAutomation({ onOpenCheckInToken }) {
       });
       const data = await res.json();
 
-      if (data.success) {
-        setDeliveryStatus('DELIVERED');
-        fetchLogs();
-      } else {
-        setDeliveryStatus('FAILED');
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Unable to send template message.');
       }
+
+      setDeliveryStatus('DELIVERED');
+      fetchLogs();
     } catch (err) {
+      console.error('Failed to send WhatsApp template:', err);
       setDeliveryStatus('FAILED');
     } finally {
       setLoading(false);
@@ -290,6 +292,7 @@ export default function WhatsAppAutomation({ onOpenCheckInToken }) {
                     <div style={{ fontSize: '0.725rem', color: '#64748b' }}>
                       {deliveryStatus === 'DELIVERED' && 'Message delivered to WhatsApp phone number.'}
                       {deliveryStatus === 'SENDING' && 'Connecting to WhatsApp Business API...'}
+                      {deliveryStatus === 'FAILED' && 'Could not reach the backend. Please retry before sharing a link.'}
                     </div>
                   </div>
                 </div>
