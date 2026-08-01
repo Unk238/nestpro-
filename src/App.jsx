@@ -34,10 +34,8 @@ export default function App() {
 
   // URL-based routing for guest check-in links.
   // Guests should see only the check-in form, with no admin dashboard or navbar.
-  // When a guest opens https://nestpro-os.vercel.app/checkin/TOKEN
-  // they must see ONLY the check-in form — no admin dashboard, no navbar
   const urlPath = typeof window !== 'undefined' ? (window.location.pathname + window.location.hash) : '/';
-  const checkinMatch = urlPath.match(/\/checkin\/([^\/\?#]+)/);
+  const checkinMatch = urlPath.match(/\/checkin\/([^/?#]+)/);
   if (checkinMatch) {
     const guestToken = checkinMatch[1];
     return <GuestSelfCheckInFlow token={guestToken} onCompleteCheckIn={() => {}} />;
