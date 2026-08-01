@@ -54,7 +54,7 @@ export default function EntranceKiosk({ onLaunchCheckIn, onLaunchAi }) {
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
           }}>
             <img 
-              src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/checkin/demo-checkin-token-88" 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${window.location.origin}/checkin/demo-checkin-token-88`} 
               alt="Entrance QR Code"
               style={{ width: '160px', height: '160px', display: 'block' }}
             />

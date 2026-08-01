@@ -237,11 +237,11 @@ export default function AdminDashboard({ onOpenCheckInToken }) {
                 <div>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#34d399' }}>✓ Check-In Link Generated for {createdToken.residentName}!</div>
                   <code style={{ fontSize: '0.8rem', color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
-                    http://localhost:5173/checkin/{createdToken.token}
+                    {window.location.origin}/checkin/{createdToken.token}
                   </code>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-secondary" onClick={() => copyToClipboard(`http://localhost:5173/checkin/${createdToken.token}`)} style={{ fontSize: '0.75rem', padding: '6px 12px' }}>
+                  <button className="btn-secondary" onClick={() => copyToClipboard(`${window.location.origin}/checkin/${createdToken.token}`)} style={{ fontSize: '0.75rem', padding: '6px 12px' }}>
                     {copied ? <Check size={14} color="#34d399" /> : <Copy size={14} />} {copied ? 'Copied!' : 'Copy Link'}
                   </button>
                   <button className="btn-primary" onClick={() => onOpenCheckInToken(createdToken.token)} style={{ fontSize: '0.75rem', padding: '6px 12px' }}>

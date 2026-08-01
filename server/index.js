@@ -16,20 +16,12 @@ app.use(express.json());
 const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 const aiClient = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
-// In-Memory WhatsApp Message History Store
-const whatsappMessageStore = [
-  {
-    id: 'msg-wa-101',
-    messageId: 'wamid.HBgLOTE5ODc2NTQzMjEwFQIAERgSQjE0MzNENDRFODA1N0M0QgA=',
-    phone: '+91 98765 43210',
-    residentName: 'Aarav Patel',
-    templateType: 'CHECKIN_LINK',
-    content: 'Welcome to NestPro.\n\nComplete your digital check-in here:\nhttp://localhost:5173/checkin/demo-checkin-token-88\n\nThis link expires in 24 hours.',
-    status: 'DELIVERED',
-    checkInUrl: 'http://localhost:5173/checkin/demo-checkin-token-88',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000).toLocaleString()
-  }
-];
+// Helper to determine production origin dynamically
+const getBaseOrigin = (req) => {
+  const host = req.get('host');
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  return `${protocol}://${host}`;
+};
 
 // Seed Database on startup
 seedDatabase();
@@ -37,19 +29,12 @@ seedDatabase();
 // ----------------------------------------------------
 // 1. ROOT BACKEND HEALTH CHECK ROUTE (GET /)
 // ----------------------------------------------------
-app.get('/', (req, res) => {
+app.get(['/', '/api'], (req, res) => {
   res.json({
     status: "running",
-    service: "NestPro Backend",
-    version: "1.0.0"
-  });
-});
-
-app.get('/api', (req, res) => {
-  res.json({
-    status: "running",
-    service: "NestPro Backend API",
-    version: "1.0.0"
+    service: "NestPro Backend OS",
+    version: "1.0.0",
+    environment: process.env.NODE_ENV || "production"
   });
 });
 
@@ -74,7 +59,7 @@ You are the Virtual AI Receptionist for NestPro — a 24/7 operating system mana
 `;
 
 // Helper Tool Execution Logic
-async function executeTool(name, params) {
+async function executeTool(name, params, origin) {
   if (name === "get_vacancy_status") {
     const { roomType } = params;
     let query = db.select().from(rooms).where(eq(rooms.status, 'AVAILABLE'));
@@ -119,7 +104,7 @@ async function executeTool(name, params) {
     return {
       propertyId,
       token: tokenString,
-      checkinUrl: `/checkin/${tokenString}`,
+      checkinUrl: `${origin}/checkin/${tokenString}`,
       assignedRoomNumber: targetRoom.roomNumber,
       expiresInHours: 24
     };
@@ -285,6 +270,8 @@ app.get('/api/settings', (req, res) => {
 // PRODUCTION WHATSAPP BUSINESS API ROUTES (/api/whatsapp)
 // ----------------------------------------------------
 
+const whatsappMessageStore = [];
+
 app.get('/api/whatsapp/messages', (req, res) => {
   res.json({ success: true, messages: whatsappMessageStore });
 });
@@ -294,6 +281,7 @@ app.post('/api/whatsapp/send-checkin-link', async (req, res) => {
     const { phone, residentName, expiryHours } = req.body;
     if (!phone) return res.status(400).json({ error: 'Mobile phone number is required.' });
 
+    const origin = getBaseOrigin(req);
     const name = residentName || 'Guest';
     const hours = expiryHours || 24;
     const tokenString = `token_${uuidv4().slice(0, 10)}`;
@@ -309,7 +297,7 @@ app.post('/api/whatsapp/send-checkin-link', async (req, res) => {
       status: 'PENDING'
     });
 
-    const checkInUrl = `http://localhost:5173/checkin/${tokenString}`;
+    const checkInUrl = `${origin}/checkin/${tokenString}`;
     const formattedContent = `Welcome to NestPro.\n\nComplete your digital check-in here:\n${checkInUrl}\n\nThis link expires in ${hours} hours.`;
 
     const messageRecord = {
@@ -431,6 +419,7 @@ app.get('/api/checkin/:token', async (req, res) => {
 app.post('/api/ai/chat', async (req, res) => {
   try {
     const { message, propertyId, guestContext } = req.body;
+    const origin = getBaseOrigin(req);
     const userMsg = (message || '').trim().toLowerCase();
     const propId = propertyId || 101;
 
@@ -450,7 +439,7 @@ app.post('/api/ai/chat', async (req, res) => {
       const guestId = (guestContext && guestContext.guestId) ? guestContext.guestId : 108;
       const result = await executeTool('create_complaint', {
         guestId, propertyId: propId, category, priority, title: message.slice(0, 60), description: message
-      });
+      }, origin);
 
       actionTaken = { toolName: 'create_complaint', result };
 
@@ -469,13 +458,13 @@ app.post('/api/ai/chat', async (req, res) => {
       }
     }
     else if (userMsg.includes('link') || userMsg.includes('checkin') || userMsg.includes('register') || userMsg.includes('book') || userMsg.includes('reserve')) {
-      const result = await executeTool('generate_checkin_link', { propertyId: propId });
+      const result = await executeTool('generate_checkin_link', { propertyId: propId }, origin);
       actionTaken = { toolName: 'generate_checkin_link', result };
 
       reply = `I have generated your token-gated Self Check-In link for Property #${propId}!\n\nClick the secure onboarding URL below to complete your digital KYC and get instant room key access:\n👉 [Open Self Check-In Portal](${result.checkinUrl})`;
     }
     else {
-      const vacancies = await executeTool('get_vacancy_status', { propertyId: propId });
+      const vacancies = await executeTool('get_vacancy_status', { propertyId: propId }, origin);
       
       if (aiClient) {
         try {
