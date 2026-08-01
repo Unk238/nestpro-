@@ -1,8 +1,9 @@
 import React from 'react';
 import { 
   Building2, ShieldCheck, Bot, Sparkles, KeyRound, ArrowRight, CheckCircle2, 
-  TrendingUp, Users, DollarSign, Smartphone, Layers, Zap, Play, Lock, MessageSquare, ChevronRight
+  TrendingUp, Users, DollarSign, Smartphone, Layers, Lock, MessageSquare, ChevronRight
 } from 'lucide-react';
+import CuteRoboMascot from './CuteRoboMascot';
 
 export default function OverviewPage({ onNavigate }) {
   return (
@@ -12,46 +13,32 @@ export default function OverviewPage({ onNavigate }) {
       <section style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)',
         borderBottom: '1px solid #e2e8f0',
-        padding: '72px 24px 64px 24px',
+        padding: '56px 24px 48px 24px',
         textAlign: 'center'
       }}>
         <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          {/* Badge */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            color: '#1d4ed8',
-            padding: '6px 16px',
-            borderRadius: '9999px',
-            fontSize: '0.8rem',
-            fontWeight: 800,
-            marginBottom: '24px'
-          }}>
-            <Sparkles size={14} color="#2563eb" />
-            NESTPRO ACCOMMODATION OPERATING SYSTEM
-          </div>
+          
+          {/* CUTE ANIMATED ROBO MASCOT */}
+          <CuteRoboMascot />
 
           {/* HIGH-CONTRAST VISIBLE HEADING */}
           <h1 style={{
-            fontSize: '3.2rem',
+            fontSize: '3rem',
             fontWeight: 900,
             lineHeight: '1.15',
             letterSpacing: '-0.03em',
             color: '#0f172a',
-            marginBottom: '20px'
+            marginBottom: '16px'
           }}>
             Replace Physical Front Desk with a <span style={{ color: '#2563eb' }}>100% Virtual Operating System</span>
           </h1>
 
           <p style={{
-            fontSize: '1.2rem',
+            fontSize: '1.1rem',
             lineHeight: '1.6',
             color: '#475569',
             maxWidth: '780px',
-            margin: '0 auto 36px auto',
+            margin: '0 auto 32px auto',
             fontWeight: 500
           }}>
             NestPro automates walk-in inquiries, bed vacancy checks, KYC document verification, digital rental agreements, payment collections, and smart door access PINs for Paying Guest (PG) accommodations, hostels, and co-living properties.
