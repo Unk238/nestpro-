@@ -160,54 +160,75 @@ sqlite.exec(`
 // Initial Data Seeding
 export function seedDatabase() {
   const roomCount = sqlite.prepare('SELECT count(*) as count FROM rooms').get();
-  if (roomCount.count === 0) {
-    console.log('🌱 Seeding initial NestPro Database...');
+  if (roomCount.count < 8) {
+    console.log('🌱 Seeding 8 Rooms & Master Hackathon Demo Data...');
+
+    sqlite.exec(`DELETE FROM rooms; DELETE FROM checkin_tokens; DELETE FROM complaints;`);
 
     const initialRooms = [
-      { id: 'rm-101', roomNumber: '101', type: 'Single Luxury', floor: 1, priceMonthly: 14500, depositAmount: 14500, status: 'AVAILABLE', amenities: JSON.stringify(['Attached Balcony', 'AC', 'Private Washroom', 'High-Speed WiFi', 'Work Desk']) },
-      { id: 'rm-102', roomNumber: '102', type: 'Double Sharing', floor: 1, priceMonthly: 9500, depositAmount: 9500, status: 'AVAILABLE', amenities: JSON.stringify(['AC', 'Shared Washroom', 'Individual Wardrobes', 'WiFi']) },
-      { id: 'rm-201', roomNumber: '201', type: 'Single Luxury', floor: 2, priceMonthly: 15000, depositAmount: 15000, status: 'AVAILABLE', amenities: JSON.stringify(['Skyline View', 'AC', 'Smart TV', 'Private Washroom', 'Ergonomic Chair']) },
-      { id: 'rm-202', roomNumber: '202', type: 'Dorm 4-Bed', floor: 2, priceMonthly: 6500, depositAmount: 6500, status: 'AVAILABLE', amenities: JSON.stringify(['Bunk Beds', 'Individual Lockers', 'Common Lounge Access', 'WiFi']) },
-      { id: 'rm-301', roomNumber: '301', type: 'Double Sharing', floor: 3, priceMonthly: 9800, depositAmount: 9800, status: 'OCCUPIED', currentTenant: 'Rohan Sharma', amenities: JSON.stringify(['AC', 'Attached Washroom', 'Balcony']) },
+      { id: 'rm-101', roomNumber: '101', type: 'Single Luxury', floor: 1, priceMonthly: 14500, depositAmount: 14500, status: 'OCCUPIED', currentTenant: 'Aarav Patel', amenities: JSON.stringify(['Balcony', 'AC', 'Private Washroom', 'WiFi']) },
+      { id: 'rm-102', roomNumber: '102', type: 'Double Sharing', floor: 1, priceMonthly: 9500, depositAmount: 9500, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['AC', 'Shared Washroom', 'WiFi']) },
+      { id: 'rm-201', roomNumber: '201', type: 'Deluxe Suite', floor: 2, priceMonthly: 25000, depositAmount: 25000, status: 'OCCUPIED', currentTenant: 'Priya Sundaram', amenities: JSON.stringify(['Skyline View', 'AC', 'Smart TV', 'Private Washroom']) },
+      { id: 'rm-202', roomNumber: '202', type: 'Double Sharing', floor: 2, priceMonthly: 9500, depositAmount: 9500, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['AC', 'Balcony', 'WiFi']) },
+      { id: 'rm-301', roomNumber: '301', type: 'Double Sharing', floor: 3, priceMonthly: 9800, depositAmount: 9800, status: 'OCCUPIED', currentTenant: 'Rohan Sharma', amenities: JSON.stringify(['AC', 'Attached Washroom']) },
+      { id: 'rm-302', roomNumber: '302', type: 'Deluxe Suite', floor: 3, priceMonthly: 22000, depositAmount: 22000, status: 'AVAILABLE', currentTenant: null, amenities: JSON.stringify(['City View', 'AC', 'Private Kitchenette']) },
+      { id: 'rm-401', roomNumber: '401', type: 'Triple Sharing', floor: 4, priceMonthly: 8000, depositAmount: 8000, status: 'MAINTENANCE', currentTenant: null, amenities: JSON.stringify(['Shared Washroom', 'WiFi']) },
+      { id: 'rm-402', roomNumber: '402', type: 'Single Luxury', floor: 4, priceMonthly: 15000, depositAmount: 15000, status: 'OCCUPIED', currentTenant: 'Vikramaditya Sen', amenities: JSON.stringify(['Top Floor View', 'AC', 'Private Desk']) }
     ];
 
     const insertRoom = sqlite.prepare(`
       INSERT INTO rooms (id, room_number, type, floor, price_monthly, deposit_amount, status, amenities, current_tenant)
       VALUES (@id, @roomNumber, @type, @floor, @priceMonthly, @depositAmount, @status, @amenities, @currentTenant)
     `);
-    initialRooms.forEach(r => insertRoom.run({ ...r, currentTenant: r.currentTenant || null }));
+    initialRooms.forEach(r => insertRoom.run(r));
 
-    const demoToken = {
-      id: 'tok-demo-123',
-      token: 'demo-checkin-token-88',
-      residentName: 'Aarav Patel',
-      phone: '+91 98765 43210',
-      assignedRoomNumber: '101',
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      status: 'PENDING',
-      accessCode: null,
-      paymentId: null,
-      kycVerified: 0
-    };
-    sqlite.prepare(`
+    // Pending Approval Registrations for 1-Click Approval Demo
+    const demoTokens = [
+      {
+        id: 'tok-demo-123',
+        token: 'demo-checkin-token-88',
+        residentName: 'Aarav Patel',
+        phone: '+91 98765 43210',
+        assignedRoomNumber: '101',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        status: 'PENDING',
+        accessCode: '441392',
+        paymentId: 'PAY-8812',
+        kycVerified: 1
+      },
+      {
+        id: 'tok-demo-124',
+        token: '3JHF82LK',
+        residentName: 'Ananya Roy (Pending Approval)',
+        phone: '+91 99000 77777',
+        assignedRoomNumber: '102',
+        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        status: 'SUBMITTED',
+        accessCode: null,
+        paymentId: null,
+        kycVerified: 1
+      }
+    ];
+
+    const insertToken = sqlite.prepare(`
       INSERT INTO checkin_tokens (id, token, resident_name, phone, assigned_room_number, expires_at, status, access_code, payment_id, kyc_verified)
       VALUES (@id, @token, @residentName, @phone, @assignedRoomNumber, @expiresAt, @status, @accessCode, @paymentId, @kycVerified)
-    `).run(demoToken);
+    `);
+    demoTokens.forEach(t => insertToken.run(t));
 
-    const rules = [
-      { id: 'rule-1', category: 'Curfew & Entry', title: 'Main Gate Locking Time', ruleText: 'Main entrance auto-locks at 10:30 PM. Late entry requires digital Smart Pass unlock via NestPro web app.' },
-      { id: 'rule-2', category: 'Visitors', title: 'Guest Policy', ruleText: 'Day visitors permitted between 9:00 AM - 8:00 PM in common areas only. No overnight stay without prior manager approval.' },
-      { id: 'rule-3', category: 'Dining', title: 'Meal Timings', ruleText: 'Breakfast: 7:30 AM - 9:30 AM | Dinner: 8:00 PM - 10:00 PM. Served in 1st Floor Dining Hall.' },
-      { id: 'rule-4', category: 'Utilities', title: 'Electricity & Laundry', ruleText: '300 units free per room/month. Washing machines operational daily 7 AM - 9 PM.' },
+    // Seed Kanban Complaints
+    const demoComplaints = [
+      { id: 'c-101', ticketId: 'TKT-101', residentName: 'Rohan Sharma', roomNumber: '301', category: 'Plumbing', description: 'AC Water Leakage in washroom', priority: 'CRITICAL', status: 'IN_PROGRESS' },
+      { id: 'c-102', ticketId: 'TKT-102', residentName: 'Aarav Patel', roomNumber: '101', category: 'Internet', description: 'Floor 2 Wi-Fi Router Reset', priority: 'HIGH', status: 'OPEN' },
+      { id: 'c-103', ticketId: 'TKT-103', residentName: 'Priya Sundaram', roomNumber: '201', category: 'Electrical', description: 'Hot Water Geyser Tripping', priority: 'MEDIUM', status: 'RESOLVED' }
     ];
-    const insertRule = sqlite.prepare('INSERT INTO house_rules (id, category, title, rule_text) VALUES (@id, @category, @title, @ruleText)');
-    rules.forEach(r => insertRule.run(r));
 
-    sqlite.prepare(`
+    const insertComplaint = sqlite.prepare(`
       INSERT INTO complaints (id, ticket_id, resident_name, room_number, category, description, priority, status)
-      VALUES ('c-1', 'TKT-1092', 'Rohan Sharma', '301', 'WiFi', 'Slow internet connection on 3rd floor router', 'MEDIUM', 'IN_PROGRESS')
-    `).run();
+      VALUES (@id, @ticketId, @residentName, @roomNumber, @category, @description, @priority, @status)
+    `);
+    demoComplaints.forEach(c => insertComplaint.run(c));
 
-    console.log('✅ Database seeded successfully!');
+    console.log('✅ Hackathon Demo Master Data Seeded Successfully!');
   }
 }
