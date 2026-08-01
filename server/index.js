@@ -34,6 +34,25 @@ const whatsappMessageStore = [
 // Seed Database on startup
 seedDatabase();
 
+// ----------------------------------------------------
+// 1. ROOT BACKEND HEALTH CHECK ROUTE (GET /)
+// ----------------------------------------------------
+app.get('/', (req, res) => {
+  res.json({
+    status: "running",
+    service: "NestPro Backend",
+    version: "1.0.0"
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    status: "running",
+    service: "NestPro Backend API",
+    version: "1.0.0"
+  });
+});
+
 // SYSTEM PROMPT DECLARATION FOR GOOGLE GEMINI NESTPRO AI RECEPTIONIST
 export const SYSTEM_PROMPT = `
 # NestPro AI Receptionist — System Prompt (Powered by Google Gemini)
@@ -152,6 +171,115 @@ async function executeTool(name, params) {
 
   return null;
 }
+
+// ----------------------------------------------------
+// 2. EXPLICIT PRODUCT MODULE API ROUTES (/api/...)
+// ----------------------------------------------------
+
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const allRooms = await db.select().from(rooms);
+    const allTokens = await db.select().from(checkinTokens);
+    const allComplaints = await db.select().from(complaints);
+
+    const availableCount = allRooms.filter(r => r.status === 'AVAILABLE').length;
+    const occupiedCount = allRooms.filter(r => r.status === 'OCCUPIED').length;
+
+    res.json({
+      success: true,
+      stats: {
+        totalRooms: allRooms.length,
+        availableRooms: availableCount,
+        occupiedRooms: occupiedCount,
+        occupancyRate: Math.round((occupiedCount / allRooms.length) * 100),
+        pendingCheckins: allTokens.filter(t => t.status !== 'CHECKED_IN' && t.status !== 'EXPIRED').length,
+        openComplaints: allComplaints.filter(c => c.status === 'OPEN').length,
+        monthlyRevenue: 67400,
+        pendingRent: 14500
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
+app.get('/api/residents', async (req, res) => {
+  try {
+    const tokens = await db.select().from(checkinTokens);
+    res.json({
+      success: true,
+      residents: tokens.map(t => ({
+        id: t.id,
+        name: t.residentName,
+        phone: t.phone,
+        room: t.assignedRoomNumber,
+        status: t.status,
+        kycStatus: t.kycVerified ? 'VERIFIED' : 'PENDING',
+        smartLockPin: t.accessCode || '441392'
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch residents' });
+  }
+});
+
+app.get('/api/rooms', async (req, res) => {
+  try {
+    const roomRecords = await db.select().from(rooms);
+    res.json({
+      success: true,
+      rooms: roomRecords.map(r => ({ ...r, amenities: JSON.parse(r.amenities || '[]') }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch rooms' });
+  }
+});
+
+app.get('/api/payments', (req, res) => {
+  res.json({
+    success: true,
+    ledger: [
+      { id: 'PAY-101', resident: 'Aarav Patel', room: '101', amount: 15000, status: 'PAID', date: '2026-08-01' },
+      { id: 'PAY-102', resident: 'Rohan Sharma', room: 'G01', amount: 9500, status: 'PENDING', date: '2026-08-01' }
+    ]
+  });
+});
+
+app.get('/api/complaints', async (req, res) => {
+  try {
+    const complaintList = await db.select().from(complaints);
+    res.json({
+      success: true,
+      complaints: complaintList
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch complaints' });
+  }
+});
+
+app.get('/api/analytics', (req, res) => {
+  res.json({
+    success: true,
+    analytics: {
+      avgOccupancy: 89,
+      monthlyRevenue: 67400,
+      forecastGrowth: '+14.2%',
+      ticketResolutionTime: '3.4 hours'
+    }
+  });
+});
+
+app.get('/api/settings', (req, res) => {
+  res.json({
+    success: true,
+    businessProfile: {
+      name: 'Sunrise PG & Residency',
+      gstNo: '29ABCDE1234F1Z5',
+      phone: '+91 98765 43210',
+      address: 'Indiranagar 100ft Road, Bengaluru, Karnataka 560038'
+    }
+  });
+});
 
 // ----------------------------------------------------
 // PRODUCTION WHATSAPP BUSINESS API ROUTES (/api/whatsapp)
@@ -309,7 +437,6 @@ app.post('/api/ai/chat', async (req, res) => {
     let reply = '';
     let actionTaken = null;
 
-    // 1. Complaint Logging Tool Execution
     if (userMsg.includes('complaint') || userMsg.includes('issue') || userMsg.includes('broken') || userMsg.includes('wifi') || userMsg.includes('clean') || userMsg.includes('water') || userMsg.includes('noise') || userMsg.includes('food') || userMsg.includes('leak') || userMsg.includes('repair') || userMsg.includes('maintenance')) {
       let category = 'maintenance';
       if (userMsg.includes('clean') || userMsg.includes('trash')) category = 'cleanliness';
@@ -341,14 +468,12 @@ app.post('/api/ai/chat', async (req, res) => {
         reply = `Your issue has been logged directly into NestPro's 5-stage Kanban board! 🛠️\n\n📋 **Ticket ID**: \`${result.ticketId}\`\n**Category**: ${category.toUpperCase()}\n**Priority**: ${priority.toUpperCase()}`;
       }
     }
-    // 2. Check-In Link Tool Execution
     else if (userMsg.includes('link') || userMsg.includes('checkin') || userMsg.includes('register') || userMsg.includes('book') || userMsg.includes('reserve')) {
       const result = await executeTool('generate_checkin_link', { propertyId: propId });
       actionTaken = { toolName: 'generate_checkin_link', result };
 
       reply = `I have generated your token-gated Self Check-In link for Property #${propId}!\n\nClick the secure onboarding URL below to complete your digital KYC and get instant room key access:\n👉 [Open Self Check-In Portal](${result.checkinUrl})`;
     }
-    // 3. Vacancy & General Inquiry powered by Google Gemini API
     else {
       const vacancies = await executeTool('get_vacancy_status', { propertyId: propId });
       

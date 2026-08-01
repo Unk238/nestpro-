@@ -6,133 +6,90 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-Memory Production WhatsApp Message Store
-const whatsappMessageStore = [
-  {
-    id: 'msg-wa-101',
-    messageId: 'wamid.HBgLOTE5ODc2NTQzMjEwFQIAERgSQjE0MzNENDRFODA1N0M0QgA=',
-    phone: '+91 98765 43210',
-    residentName: 'Aarav Patel',
-    templateType: 'CHECKIN_LINK',
-    content: 'Welcome to NestPro.\n\nComplete your digital check-in here:\nhttps://nestpro.app/checkin/demo-checkin-token-88\n\nThis link expires in 24 hours.',
-    status: 'DELIVERED',
-    checkInUrl: 'https://nestpro.app/checkin/demo-checkin-token-88',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000).toLocaleString()
-  }
-];
-
-const mockTokens = [
-  {
-    id: 'tok-101',
-    token: 'demo-checkin-token-88',
-    residentName: 'Aarav Patel',
-    phone: '+91 98765 43210',
-    assignedRoomNumber: '101',
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    status: 'PENDING',
-    kycVerified: 1,
-    accessCode: '441392'
-  }
-];
-
-// WhatsApp API Endpoints
-app.get(['/api/whatsapp/messages', '/whatsapp/messages'], (req, res) => {
-  res.json({ success: true, messages: whatsappMessageStore });
-});
-
-app.post(['/api/whatsapp/send-checkin-link', '/whatsapp/send-checkin-link'], (req, res) => {
-  const { phone, residentName, expiryHours } = req.body;
-  if (!phone) return res.status(400).json({ error: 'Phone number is required' });
-
-  const name = residentName || 'Guest';
-  const hours = expiryHours || 24;
-  const tokenString = `token_${uuidv4().slice(0, 10)}`;
-  const checkInUrl = `${req.protocol}://${req.get('host')}/checkin/${tokenString}`;
-  const formattedContent = `Welcome to NestPro.\n\nComplete your digital check-in here:\n${checkInUrl}\n\nThis link expires in ${hours} hours.`;
-
-  const msgRecord = {
-    id: `msg-wa-${Date.now()}`,
-    messageId: `wamid.${uuidv4().toUpperCase()}`,
-    phone,
-    residentName: name,
-    templateType: 'CHECKIN_LINK',
-    content: formattedContent,
-    status: 'DELIVERED',
-    checkInUrl,
-    timestamp: new Date().toLocaleString()
-  };
-
-  whatsappMessageStore.unshift(msgRecord);
-
+// Root Health Check Route
+app.get(['/', '/api'], (req, res) => {
   res.json({
-    success: true,
-    messageId: msgRecord.messageId,
-    token: tokenString,
-    checkInUrl,
-    recipientPhone: phone,
-    status: 'DELIVERED',
-    content: formattedContent,
-    message: `WhatsApp check-in link successfully delivered to ${phone}!`
+    status: "running",
+    service: "NestPro Backend",
+    version: "1.0.0"
   });
 });
 
-app.post(['/api/whatsapp/send-template', '/whatsapp/send-template'], (req, res) => {
-  const { phone, residentName, templateType, customText } = req.body;
-  if (!phone) return res.status(400).json({ error: 'Phone number is required' });
-
-  const name = residentName || 'Resident';
-  const type = templateType || 'WELCOME_MESSAGE';
-  const content = customText || `Namaste ${name}, welcome to NestPro PG Management.`;
-
-  const msgRecord = {
-    id: `msg-wa-${Date.now()}`,
-    messageId: `wamid.${uuidv4().toUpperCase()}`,
-    phone,
-    residentName: name,
-    templateType: type,
-    content,
-    status: 'DELIVERED',
-    checkInUrl: null,
-    timestamp: new Date().toLocaleString()
-  };
-
-  whatsappMessageStore.unshift(msgRecord);
-
+// Module API Routes for Production & Vercel
+app.get(['/api/dashboard', '/dashboard'], (req, res) => {
   res.json({
     success: true,
-    messageId: msgRecord.messageId,
-    recipientPhone: phone,
-    status: 'DELIVERED',
-    content,
-    message: `WhatsApp template message (${type}) delivered to ${phone}!`
+    stats: {
+      totalRooms: 5,
+      availableRooms: 3,
+      occupiedRooms: 2,
+      occupancyRate: 40,
+      pendingCheckins: 1,
+      openComplaints: 1,
+      monthlyRevenue: 67400,
+      pendingRent: 14500
+    }
   });
 });
 
-app.get(['/api/checkin/:token', '/checkin/:token'], (req, res) => {
-  const { token } = req.params;
-  const tokenData = mockTokens.find(t => t.token === token) || {
-    token,
-    residentName: 'Prospective Resident',
-    phone: '+91 98765 43210',
-    assignedRoomNumber: '102',
-    status: 'PENDING',
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-  };
-
+app.get(['/api/residents', '/residents'], (req, res) => {
   res.json({
-    token: tokenData.token,
-    residentName: tokenData.residentName,
-    phone: tokenData.phone,
-    assignedRoomNumber: tokenData.assignedRoomNumber,
-    status: tokenData.status,
-    expiresAt: tokenData.expiresAt,
-    accessCode: tokenData.accessCode || '441392',
-    room: {
-      roomNumber: tokenData.assignedRoomNumber,
-      type: 'Double Sharing',
-      floor: 'Floor 1',
-      priceMonthly: 9500,
-      depositAmount: 9500
+    success: true,
+    residents: [
+      { id: 'res-101', name: 'Aarav Patel', phone: '+91 98765 43210', room: '101', status: 'PAID', kycStatus: 'VERIFIED' },
+      { id: 'res-102', name: 'Rohan Sharma', phone: '+91 98123 99999', room: 'G01', status: 'PENDING', kycStatus: 'VERIFIED' }
+    ]
+  });
+});
+
+app.get(['/api/rooms', '/rooms'], (req, res) => {
+  res.json({
+    success: true,
+    rooms: [
+      { roomNumber: '101', floor: 'Floor 1', type: 'Single Luxury', priceMonthly: 15000, status: 'OCCUPIED' },
+      { roomNumber: '102', floor: 'Floor 1', type: 'Double Sharing', priceMonthly: 9500, status: 'AVAILABLE' }
+    ]
+  });
+});
+
+app.get(['/api/payments', '/payments'], (req, res) => {
+  res.json({
+    success: true,
+    ledger: [
+      { id: 'PAY-101', resident: 'Aarav Patel', room: '101', amount: 15000, status: 'PAID', date: '2026-08-01' },
+      { id: 'PAY-102', resident: 'Rohan Sharma', room: 'G01', amount: 9500, status: 'PENDING', date: '2026-08-01' }
+    ]
+  });
+});
+
+app.get(['/api/complaints', '/complaints'], (req, res) => {
+  res.json({
+    success: true,
+    complaints: [
+      { id: 'TKT-101', resident: 'Rohan Sharma', room: '101', title: 'AC Water Leakage', category: 'Plumbing', priority: 'CRITICAL', status: 'IN_PROGRESS' }
+    ]
+  });
+});
+
+app.get(['/api/analytics', '/analytics'], (req, res) => {
+  res.json({
+    success: true,
+    analytics: {
+      avgOccupancy: 89,
+      monthlyRevenue: 67400,
+      forecastGrowth: '+14.2%',
+      ticketResolutionTime: '3.4 hours'
+    }
+  });
+});
+
+app.get(['/api/settings', '/settings'], (req, res) => {
+  res.json({
+    success: true,
+    businessProfile: {
+      name: 'Sunrise PG & Residency',
+      gstNo: '29ABCDE1234F1Z5',
+      phone: '+91 98765 43210'
     }
   });
 });
